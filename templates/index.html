@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE EYE - Advanced Biometric System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="cyber-overlay"></div>
+    <div class="scanline"></div>
+
+    <div class="main-layout">
+        <!-- Dashboard Left: Big Scanning View -->
+        <section class="scanner-section">
+            <header class="main-header">
+                <div class="brand">
+                    <h1 class="glitch" data-text="SECURE EYE">SECURE EYE</h1>
+                    <p class="sub-brand">NEURAL LINK BIOMETRICS v2.4</p>
+                </div>
+                <div class="system-status">
+                    <div class="status-item">
+                        <span class="label">CORE_TEMP</span>
+                        <span class="value">34°C</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">LINK_STATUS</span>
+                        <span class="value active">ENCRYPTED</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="viewport">
+                <div class="video-container">
+                    <video id="webcam" autoplay playsinline muted></video>
+                    <canvas id="overlay"></canvas>
+
+                    <div class="live-indicator">
+                        <span class="dot"></span> LIVE_REC
+                    </div>
+
+                    <!-- Futuristic Reticle -->
+                    <div class="target-reticle">
+                        <div class="reticle-line h"></div>
+                        <div class="reticle-line v"></div>
+                        <div class="corner top-left"></div>
+                        <div class="corner top-right"></div>
+                        <div class="corner bottom-left"></div>
+                        <div class="corner bottom-right"></div>
+
+                        <div class="scanning-bar"></div>
+                    </div>
+
+                    <!-- HUD Elements -->
+                    <div class="hud top-left-hud">
+                        <div class="hud-deco"></div>
+                        <p>COORD_X: <span id="hud-x">0.00</span></p>
+                        <p>COORD_Y: <span id="hud-y">0.00</span></p>
+                    </div>
+                    <div class="hud bottom-left-hud">
+                        <div class="hud-deco pink"></div>
+                        <p>EYE_CAPTURE: <span id="hud-eye">WAITING</span></p>
+                    </div>
+
+                    <div class="data-stream-left">
+                        <span>DATA_LINK... OK</span>
+                        <span>NET_SEC... OK</span>
+                        <span>BIOS_VR... 2.4.9</span>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="main-footer">
+                <button id="register-btn" class="cyber-action-btn">
+                    <span class="btn-glitch">NEW REGISTRATION</span>
+                </button>
+            </footer>
+        </section>
+
+        <!-- Dashboard Right: Results and Logs -->
+        <section class="aside-section">
+            <div class="panel result-panel">
+                <h2 class="panel-title">IDENTIFICATION_RESULT</h2>
+                <div id="id-card" class="id-profile hidden">
+                    <div class="profile-header">
+                        <div class="avatar-glow"></div>
+                        <div class="profile-text">
+                            <h3 id="user-name">ACCESS GRANTED</h3>
+                            <p id="user-id">---</p>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-row">
+                            <span class="d-label">DEPT:</span>
+                            <span class="d-val" id="user-dept">---</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="d-label">CLASS:</span>
+                            <span class="d-val" id="user-class">---</span>
+                        </div>
+                    </div>
+                    <div class="auth-stamp">VERIFIED</div>
+                </div>
+                <div id="no-result" class="waiting-prompt">
+                    <div class="pulse-icon"></div>
+                    <p>AWATING BIOMETRIC INPUT...</p>
+                </div>
+            </div>
+
+            <div class="panel logs-panel">
+                <div class="panel-header-flex">
+                    <h2 class="panel-title">SESSION_LOGS</h2>
+                    <a href="/export_pdf" class="download-link" title="Download Attendance PDF">
+                        <svg class="download-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 16L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            <path d="M9 13L12 16L15 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            <path d="M8 20H16C18.2091 20 20 18.2091 20 16V14.5" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                            <path d="M4 14.5V16C4 18.2091 5.79086 20 8 20" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                    </a>
+                </div>
+                <div id="attendance-list" class="log-stream">
+                    <!-- Logs will be prepended here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Multi-Step Registration Modal -->
+    <div id="reg-modal" class="modal hidden">
+        <div class="modal-content cyber-card">
+            <button class="close-modal">&times;</button>
+
+            <div id="reg-step-1" class="reg-step">
+                <h2 class="form-title">CANDIDATE_DATA_INPUT</h2>
+                <form id="reg-form">
+                    <div class="input-grid">
+                        <div class="input-group">
+                            <label>FULL NAME</label>
+                            <input type="text" name="name" placeholder="John Doe" required>
+                        </div>
+                        <div class="input-group">
+                            <label>ROLL NUMBER</label>
+                            <input type="text" name="roll_no" placeholder="R-2025-001" required>
+                        </div>
+                        <div class="input-group">
+                            <label>DEPARTMENT</label>
+                            <input type="text" name="department" placeholder="AI & Robotics" required>
+                        </div>
+                        <div class="input-group">
+                            <label>CLASSROOM</label>
+                            <input type="text" name="classroom" placeholder="B-104" required>
+                        </div>
+                        <div class="input-group">
+                            <label>DATE OF BIRTH</label>
+                            <input type="date" name="dob" required>
+                        </div>
+                        <div class="input-group">
+                            <label>EMAIL IDENTITY</label>
+                            <input type="email" name="mail_id" placeholder="user@secure.link" required>
+                        </div>
+                    </div>
+                    <button type="button" id="next-to-scan" class="cyber-btn-primary">CONTINUE TO BIOMETRIC
+                        SCAN</button>
+                </form>
+            </div>
+
+            <div id="reg-step-2" class="reg-step hidden">
+                <h2 class="form-title">BIOMETRIC_STABILIZATION</h2>
+                <div class="scan-preview-wrapper">
+                    <video id="reg-video" autoplay playsinline muted></video>
+                    <canvas id="reg-overlay"></canvas>
+
+                    <div class="scan-indicator-ring">
+                        <div class="scan-progress-border"></div>
+                        <div class="scan-status-text">INITIATING...</div>
+                    </div>
+                </div>
+                <p class="scan-instructions">ALIGIN YOUR FACE TO THE CENTER. AUTO-CAPTURE WILL TRIGGER UPON 100%
+                    STABILITY.</p>
+                <div class="scan-progress-bar-container">
+                    <div id="scan-bar" class="scan-progress-bar"></div>
+                </div>
+                <div class="reg-actions">
+                    <button type="button" id="back-to-details" class="cyber-btn-flat">BACK TO DETAILS</button>
+                    <button type="button" id="manual-capture" class="cyber-btn-flat manual-btn">MANUAL CAPTURE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
